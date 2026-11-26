@@ -1,0 +1,54 @@
+node_modules/
+dist/
+*.js.map
+*.d.ts.map
+# TypeScript incremental build cache — regenerated on every `tsc -b`,
+# machine-specific, never belongs in git.
+*.tsbuildinfo
+.env
+# Slice 18 — the UI's env file carries public branding defaults
+# (VITE_HUB_*) and ships in the bundle. Whitelist so production
+# builds get the Floyd defaults without an out-of-band setup step.
+# DO NOT put secrets here — Vite exposes VITE_-prefixed vars to
+# client code. Backend/server env vars belong in civic-hub/.env.
+!ui/.env
+
+# OS artifacts
+.DS_Store
+
+# TS build output for scripts/
+scripts/*.js
+scripts/*.d.ts
+
+# Vite scaffolding we don't use
+ui/README.md
+ui/src/assets/
+.vercel
+.env*
+
+# Local DB backups — may contain prod data/PII, never commit
+backups/
+# Hub export bundles (scripts/export-hub.ts) — a hub's personal data, never commit
+exports/
+supabase/.temp/
+# Supabase JWT signing keys — private keys, generated per developer with
+# `supabase gen signing-key`. The committed config.toml points at this path;
+# the file itself never goes in git.
+supabase/signing_keys.json
+
+
+# Playwright failure artifacts — screenshots and traces, never committed
+test-results/
+playwright-report/
+
+# Claude Code per-machine permissions
+.claude/settings.local.json
+
+# Raw jurisdiction sources (scripts/fetch-jurisdiction-sources.sh) — large, re-downloadable; the built list is committed
+config/jurisdictions/sources/
+
+# Private idea list, kept locally and not in the repo (removed 2026-11-18)
+IDEAS.md
+
+# A node_modules link (local trial setup)
+node_modules
