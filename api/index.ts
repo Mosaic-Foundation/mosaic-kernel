@@ -1,0 +1,29 @@
+// Vercel serverless function — wraps the Express app.
+//
+// All /api/* requests are routed here by vercel.json.
+// We strip the /api prefix so Express routes match (e.g., /api/process → /process).
+// The Express app auto-seeds on first import (cold start).
+
+import type { IncomingMessage, ServerResponse } from "http";
+import app from "../src/app.js";
+
+/**
+ * Raise the function timeout to 300s (5 min) so the meeting-summary
+ * cron can process a backfill batch (Floyd's 2026 meetings, roughly
+ * 4–8 entries at 10–30s apiece) within a single invocation. Vercel Pro
+ * supports up to 300; Enterprise allows longer. Applies to every route
+ * served by this function, not just the cron — fine because the other
+ * routes finish in milliseconds.
+ */
+export const maxDuration = 300;
+
+export default function handler(req: IncomingMessage, res: ServerResponse) {
+  // Kept for the moved-hub redirect (src/middleware/hub.ts), which must send
+  // an API caller to the same /api path on the hub's new address.
+  (req as IncomingMessage & { civicOriginalUrl?: string }).civicOriginalUrl = req.url;
+  // Strip /api prefix so Express routes match their registered paths
+  req.url = req.url!.replace(/^\/api/, "") || "/";
+
+  // Let Express handle it
+  app(req, res);
+}
