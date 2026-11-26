@@ -42,6 +42,36 @@ Adam on 2026-11-18: the split is tried first, and `civic-hub` main and dev stay 
 - **Hashes.** A plugin's approval covers a fingerprint of its files. Copying a plugin unchanged keeps its fingerprint.
   The trial checks this, so the switch needs no new approvals.
 
+## Where the trial stands
+
+**Step 2, the copy (Nov 26).** Copied from `civic-hub` dev at `88935c8` (the PR #23 merge) in the same folder layout,
+so every path, import and test runs unchanged. The move into `kernel/`, `sdk/`, `conformance/`, `ui/` and `plugins/`
+comes once the trial is green, as its own step. Left behind in `civic-hub`: the runbooks and hand-off notes (apart
+from RUNBOOK-operations.md, whose settings table the kernel generates), the release and Vercel scripts and their
+test, the Smoke workflow, and docs/RELEASE-CHECKS.md. The E2E workflow runs on `main` and on every pull request here.
+
+Several of the kernel's checks read deployment files by path (the place-name check scans `api/`, `plugins:sync`
+writes `vercel.json`'s share-card routes, CI seeds hubs from `config/hubs/`), so `api/`, `vercel.json` and
+`config/hubs/` came over as copies too, like `spaces/civic/` below. Each is a seam step 4 has to cut.
+
+Two things came over that the table above leaves in `civic-hub`, because the kernel can't run its tests without them
+yet:
+
+- **The Civic Hub space type (`spaces/civic/`), as the test space type.** Eight of the ten general plugins (all but
+  Events) get their feed card kinds and digest sections from the space type's palette, not from their own
+  manifests, so with no space type they don't load. Many tests also expect the Civic Hub's words ("Resident") and
+  sample content. The fix is for each plugin to declare its own kinds, as Events already does, which means new
+  plugin versions and approvals, so it is its own step after the trial. Until then `spaces/civic/` here is a copy
+  for tests, and `civic-hub` keeps the one that is used.
+- **The outside services' implementations (`src/hosting/`).** These are the vendors behind the kernel's adapters
+  (Anthropic, Resend, Sentry, Supabase Storage, Polis and the others). They hold no deployment's settings. The
+  composition roots still install them from `src/app.ts`, and the operator's hub export reads Supabase Storage
+  directly. Moving the choice of vendors out to the space type's repository is part of step 4.
+
+Also noted for step 4: `scripts/plugins-sync.ts` writes `vercel.json`'s share-card routes, and the kernel reads the
+deployment's generated `config/` files (plugins, space type, palette) by relative path. The trial branch in
+`civic-hub` needs a way to hand those to the kernel.
+
 ## Done when
 
 - `mosaic-kernel` builds and passes its own CI.

@@ -1,0 +1,292 @@
+// Vercel serverless function — serves page-specific Open Graph meta
+// tags for social media crawlers. Normal browser requests get the SPA
+// index.html unchanged.
+//
+// vercel.json routes every public detail section (/process/:id,
+// /proposal/:id, /brief/:id, etc.) here. The function checks User-Agent:
+// crawlers get a minimal HTML page with the right og:title /
+// og:description / og:image, resolved by the hub's registry-driven
+// GET /share/meta; browsers get the built SPA so React Router handles
+// client-side routing.
+
+import { env, hostingEnv } from "../src/config/env.js";
+import type { IncomingMessage, ServerResponse } from "http";
+import { readFileSync } from "fs";
+import { resolve } from "path";
+
+// Meta runs three fetchers, not one. `facebookexternalhit` scrapes for the
+// feed after a post goes up; `meta-externalfetcher` performs the
+// user-initiated fetch that builds the link card in the share composer, and
+// `meta-externalagent` is its general crawler. Only the first was listed, so
+// the composer got the plain SPA page and showed a bare "civic.social" chip
+// while the published post, scraped by the listed agent, had the full
+// preview (Adam, 2026-09-06; confirmed with curl -A "meta-externalfetcher/1.1").
+//
+// Mastodon and Bluesky were routed here but missing from this list, so their
+// link cards showed the generic hub page instead of the item: a post shared
+// with Share on Mastodon read "Civic Hub" where it should have read the
+// announcement (Adam, 2026-11-15). Mastodon's fetcher says "Mastodon/<v>",
+// Bluesky's card service "Bluesky Cardyb"; iframely, Reddit and Skype make
+// cards too.
+const CRAWLER_RE =
+  /facebookexternalhit|Facebot|meta-external(agent|fetcher)|Twitterbot|LinkedInBot|Slackbot|WhatsApp|Discordbot|TelegramBot|Applebot|Pinterest|Embedly|Quora|vkShare|W3C_Validator|Mastodon|Bluesky|Iframely|redditbot|SkypeUriPreview/i;
+
+/** Exported for the unit test that pins the crawler list. */
+export function isSocialCrawler(userAgent: string): boolean {
+  return CRAWLER_RE.test(userAgent);
+}
+
+// Build-time fallbacks. Used only when the hub cannot be reached, or on a
+// single-hub self-hosted deployment that has no hubs row.
+// Placeless: this function serves every hub, and a card that names one hub
+// is wrong on all the others.
+const FALLBACK_HUB_NAME = hostingEnv.VITE_HUB_PAGE_TITLE?.trim() || "Civic Hub";
+const FALLBACK_BANNER_URL = hostingEnv.VITE_HUB_BANNER_URL?.trim() || "";
+
+/**
+ * This request's own origin.
+ *
+ * Previously read from env, which made it a per-deployment constant. One
+ * deployment now serves many hubs, so the origin has to come from the request
+ * that arrived — otherwise every hub's share cards would carry the primary
+ * hub's domain, and the /api calls below would resolve the wrong hub.
+ */
+function siteUrlFor(req: IncomingMessage): string {
+  const host = (req.headers.host ?? "").trim().toLowerCase();
+  if (!host) {
+    return (
+      env.CIVIC_UI_BASE_URL ??
+      env.BASE_URL ??
+      // The platform, not a hub: a request with no Host names no hub.
+      "https://civic.social"
+    ).replace(/\/$/, "");
+  }
+  const isLocal = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+  return `${isLocal ? "http" : "https"}://${host}`;
+}
+
+interface HubBranding {
+  name: string;
+  bannerUrl: string;
+  /** The hub moved: its new origin (review R47). Crawlers are redirected there. */
+  movedTo?: string;
+}
+
+/** Cached per host for the life of the instance; identity rarely changes. */
+const brandingByHost = new Map<string, HubBranding>();
+
+/**
+ * The serving hub's name and banner, from the same /api/hub-config the UI
+ * reads, so a share card and the page it links to never disagree.
+ */
+async function fetchBranding(siteUrl: string): Promise<HubBranding> {
+  const cached = brandingByHost.get(siteUrl);
+  if (cached) return cached;
+
+  const fallback: HubBranding = {
+    name: FALLBACK_HUB_NAME,
+    bannerUrl: FALLBACK_BANNER_URL,
+  };
+  try {
+    const res = await fetch(`${siteUrl}/api/hub-config`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) {
+      // A moved hub answers hub_moved with its new origin; the page shell
+      // follows it in the browser, a crawler gets a redirect below.
+      const moved = (await res.json().catch(() => null)) as { error?: unknown; code?: unknown; location?: unknown } | null;
+      if (res.status === 404 && (moved?.code ?? moved?.error) === "hub_moved" && typeof moved?.location === "string" && /^https?:\/\//.test(moved.location)) {
+        return { ...fallback, movedTo: moved.location.replace(/\/$/, "") };
+      }
+      return fallback;
+    }
+    const body = (await res.json()) as {
+      hub?: { name?: string };
+      settings?: Record<string, string>;
+    };
+    const branding: HubBranding = {
+      name:
+        body.settings?.["identity.page_title"] ||
+        body.hub?.name ||
+        fallback.name,
+      bannerUrl: body.settings?.["identity.banner_url"] || fallback.bannerUrl,
+    };
+    brandingByHost.set(siteUrl, branding);
+    return branding;
+  } catch {
+    return fallback;
+  }
+}
+
+let cachedIndexHtml: string | null = null;
+
+function getIndexHtml(): string | null {
+  if (cachedIndexHtml) return cachedIndexHtml;
+  // Vercel's outputDirectory is ui/dist — the serverless function runs
+  // from .vercel/output/functions/api/og.func/ but static assets are
+  // at the deployment root. Try several candidate paths that cover
+  // local dev and Vercel's production layout.
+  const candidates = [
+    resolve("/var/task", "ui", "dist", "index.html"),
+    resolve("/var/task/user", "ui", "dist", "index.html"),
+    resolve("/vercel/path0", "ui", "dist", "index.html"),
+    "/var/task/ui/dist/index.html",
+    "/var/task/index.html",
+  ];
+  for (const p of candidates) {
+    try {
+      cachedIndexHtml = readFileSync(p, "utf-8");
+      return cachedIndexHtml;
+    } catch {
+      // try next
+    }
+  }
+  return null;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function absoluteImage(
+  img: string | undefined | null,
+  siteUrl: string,
+  bannerUrl: string,
+): string {
+  // No image and no banner: no og:image at all, rather than the bare site
+  // URL posing as one.
+  if (!img) return bannerUrl ? `${siteUrl}${bannerUrl}` : "";
+  if (img.startsWith("http")) return img;
+  return `${siteUrl}${img}`;
+}
+
+interface OgData {
+  title: string;
+  description: string;
+  image?: string | null;
+}
+
+/**
+ * One call for every page kind. The hub's GET /share/meta resolves the id
+ * through the process registry (services/shareMeta.ts), so this function
+ * never enumerates sections — a type added later is covered the moment its
+ * handler has a detailPath and vercel.json routes that section here
+ * (tests/unit/shareMeta.test.ts guards that list).
+ */
+async function fetchOgData(
+  pathname: string,
+  siteUrl: string,
+): Promise<OgData | null> {
+  try {
+    // `page`, not `path`: Vercel's /api/:path* rewrite appends its own
+    // `path=` capture to the query and would clobber ours.
+    const res = await fetch(
+      `${siteUrl}/api/share/meta?page=${encodeURIComponent(pathname)}`,
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as Partial<OgData>;
+    if (!data.title) return null;
+    return {
+      title: data.title,
+      description: data.description ?? data.title,
+      image: data.image ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function ogHtml(
+  og: OgData,
+  pathname: string,
+  siteUrl: string,
+  branding: HubBranding,
+): string {
+  const url = `${siteUrl}${pathname}`;
+  const image = absoluteImage(og.image, siteUrl, branding.bannerUrl);
+  const t = escapeHtml(og.title);
+  const d = escapeHtml(og.description);
+  const hubName = escapeHtml(branding.name);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>${t} — ${hubName}</title>
+  <meta name="description" content="${d}" />
+  <meta property="og:title" content="${t}" />
+  <meta property="og:description" content="${d}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="${escapeHtml(url)}" />
+  ${image ? `<meta property="og:image" content="${escapeHtml(image)}" />` : ""}
+  <meta property="og:site_name" content="${hubName}" />
+  <meta name="twitter:card" content="${image ? "summary_large_image" : "summary"}" />
+  <meta name="twitter:title" content="${t}" />
+  <meta name="twitter:description" content="${d}" />
+  ${image ? `<meta name="twitter:image" content="${escapeHtml(image)}" />` : ""}
+</head>
+<body>
+  <h1>${t}</h1>
+  <p>${d}</p>
+  <p><a href="${escapeHtml(url)}">Open in ${hubName}</a></p>
+</body>
+</html>`;
+}
+
+export default async function handler(
+  req: IncomingMessage,
+  res: ServerResponse,
+) {
+  const ua = req.headers["user-agent"] ?? "";
+  // Vercel's rewrite appends its `:id` capture as a query string; the
+  // canonical og:url must be the bare path.
+  const pathname = (req.url ?? "/").split("?")[0];
+  const siteUrl = siteUrlFor(req);
+
+  if (CRAWLER_RE.test(ua)) {
+    const [og, branding] = await Promise.all([
+      fetchOgData(pathname, siteUrl),
+      fetchBranding(siteUrl),
+    ]);
+    if (branding.movedTo) {
+      res.writeHead(301, { Location: `${branding.movedTo}${pathname}` });
+      res.end();
+      return;
+    }
+    if (og) {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(ogHtml(og, pathname, siteUrl, branding));
+      return;
+    }
+  }
+
+  // Not a crawler (or data fetch failed) — serve the SPA.
+  const html = getIndexHtml();
+  if (html) {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(html);
+  } else {
+    // index.html not found on disk — fetch it from the CDN. The
+    // file is served by Vercel's static layer at /index.html (the
+    // catch-all rewrite). We fetch it once and cache for subsequent
+    // requests to avoid repeated round-trips.
+    try {
+      const cdnRes = await fetch(`${siteUrl}/index.html`);
+      if (cdnRes.ok) {
+        cachedIndexHtml = await cdnRes.text();
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        res.end(cachedIndexHtml);
+      } else {
+        res.writeHead(502, { "Content-Type": "text/plain" });
+        res.end("Could not load application.");
+      }
+    } catch {
+      res.writeHead(502, { "Content-Type": "text/plain" });
+      res.end("Could not load application.");
+    }
+  }
+}

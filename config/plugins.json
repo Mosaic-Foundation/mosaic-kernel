@@ -1,0 +1,15 @@
+{
+  "space": "spaces/civic",
+  "packages": [
+    "packages/civic.vote",
+    "packages/civic.proposals",
+    "packages/civic.projects",
+    "packages/civic.brief",
+    "packages/civic.announcement",
+    "packages/civic.news_sync",
+    "packages/civic.meeting_summary",
+    "packages/civic.polis_deliberation",
+    "packages/civic.wordcloud",
+    "packages/civic.event"
+  ]
+}

@@ -1,0 +1,113 @@
+# Terms of Service
+
+*Last updated: 2026-11-17*
+*Version: 1.5*
+
+{{#draft}}> **Draft starter content — review before launch.** This document was drafted as a starting point and is not legal advice. Have it reviewed by a lawyer {{#place}}familiar with {STATE} and US consumer law{{/place}}{{^place}}familiar with {GOVERNING_STATE} and US consumer law{{/place}} before {THE_HUB_NAME} accepts its first {{#place}}resident {{/place}}sign-up in production.{{/draft}}
+
+## In short
+
+- Follow the Code of Conduct, use one account, and only for yourself.
+{{#place}}- Join only if you live in {PLACE}. We take your word for it.
+{{/place}}- What you post stays yours. It stays on the record of the hub's work, even if you close your account, unless it is removed under the Code of Conduct or at your request.
+- We try to keep the hub running and accurate, without promises we can't keep, and we tell you before these Terms change.
+- An account can be closed for breaking these Terms or the Code of Conduct.
+
+## Agreement
+
+By using {THE_HUB_NAME} ("the Hub") at {HOSTNAME}, you agree to these Terms of Service ("Terms"). If you don't agree, please don't use the Hub.
+
+{WHO_RUNS_THIS}
+
+## Who can use the Hub
+
+- You must be at least 13 years old.
+- Some civic activities on the Hub — notably advisory votes — may be further restricted by the process itself. Each activity will state its eligibility rules clearly.
+{{#place}}- You may create an account if you affirm, honestly, that you are a resident of {PLACE}. We do not verify this claim against external records; we rely on your honesty. Misrepresenting residency to participate in civic processes is a violation of these Terms.{{/place}}{{^place}}- You may create an account if you agree to these Terms, the Privacy Policy and the Code of Conduct.{{/place}}
+- One account per person. If you lose access to your account, contact us.
+
+## What you can expect from us
+
+We'll:
+- Keep the site running with reasonable availability (no uptime guarantee, but we try).
+- Protect your information as described in our Privacy Policy.
+- Apply the Code of Conduct consistently and transparently.
+- Keep civic records (votes, vote results, meeting summaries, announcements) accurate to the best of our ability.
+- Show you any change to these Terms and ask you to accept it before you go on.
+
+## What we expect from you
+
+You agree to:
+- Follow our [Code of Conduct](/code-of-conduct) when posting, commenting, or otherwise interacting on the Hub.
+- Only create an account for yourself, not on behalf of someone else.
+{{#place}}- Only affirm {PLACE} residency if you honestly live in {JURISDICTION}.
+{{/place}}{{^place}}{{/place}}- Not attempt to sign up more than once or vote more than once per issue. {{#place}}One resident, one voice.{{/place}}{{^place}}One person, one voice.{{/place}}
+- Not use the Hub to break the law, harass others, or disrupt the service.
+- Keep discussion self-contained: do not import or repost private content about specific people from other platforms (for example, screenshots or copied social-media posts). Linking to authoritative or official sources as references is permitted.
+- Not scrape, crawl, or programmatically access the Hub except through our public APIs (once we publish them).
+- Not impersonate another person or misrepresent your identity or affiliation.
+
+## Content you submit
+
+When you post a comment, submit a vote, or otherwise contribute content to the Hub, you keep ownership of that content. You grant us a non-exclusive, worldwide, royalty-free license to display, distribute, and archive it as part of the civic record. This license is necessary for the Hub to work — we can't publish vote results showing what {{#place}}residents{{/place}}{{^place}}participants{{/place}} said if we don't have permission to publish what you said.
+
+The license continues even if you close your account. Your civic contributions remain part of the record unless we remove them under the Code of Conduct or by your specific deletion request (which we'll evaluate on a case-by-case basis).
+
+You represent that content you submit is yours to submit — that you wrote it, it doesn't violate anyone else's rights, and it doesn't contain someone else's private information.
+
+## Content we generate
+
+The Hub generates some content automatically, notably:
+- **Vote results** summarizing vote participation, comments, and admin context.
+- **Meeting summaries** {{#place}}of public {GOVERNING_BODY} meetings,{{/place}}{{^place}}of public meetings,{{/place}} produced by AI from public minutes and video recordings and reviewed by an admin before publication.
+
+These are clearly labeled as AI-assisted and admin-reviewed. They are our best effort at accuracy but are **not authoritative transcripts** and should not be relied on for legal or official purposes. For authoritative records, {{#place}}consult the {PLACE} government directly.{{/place}}{{^place}}consult the body that held the meeting directly.{{/place}}
+
+## Moderation
+
+We enforce a [Code of Conduct](/code-of-conduct) that focuses on decorum, not opinion. We may remove content that violates the Code; we do not remove content just because we disagree with it.
+
+If your content is removed, we'll tell you why when we can identify how to reach you. You can appeal by emailing {CONTACT_EMAIL}; a human will review. Repeated or severe violations may result in temporary or permanent restriction of your account.
+
+## Disclaimers
+
+{{#place}}**The Hub is not an official government channel.** The {GOVERNING_BODY} is not obligated to consider, respond to, or act on any civic process conducted on the Hub. Votes here are *advisory*. We provide the {GOVERNING_BODY} with vote results when votes close, but they make their own decisions through their own processes.{{/place}}{{^place}}**The Hub is not an official channel of any government.** Votes here are *advisory*: they record what participants think, and they bind no one.{{/place}}
+
+**AI-generated content is summarization, not verbatim record.** Meeting summaries and related content are produced by an AI system and reviewed by an admin. They may contain errors, omissions, or misinterpretations. Always check the underlying minutes PDF or YouTube video for authoritative detail.
+
+**We make no warranty.** The Hub is provided "as is." We don't warrant that it will always be available, error-free, or suitable for any particular purpose. Use it at your own discretion.
+
+## Limitation of liability
+
+To the fullest extent allowed by law, {OPERATOR_NOUN} and its contributors are not liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Hub. Our total liability for any claim related to the Hub is limited to $100.
+
+Some jurisdictions don't allow these limitations. In those jurisdictions, our liability is limited to the minimum allowed.
+
+## Termination
+
+You can stop using the Hub at any time. To close your account, open your account menu, choose Your settings, and press Delete my account at the bottom of the page.
+
+We can suspend or close your account, remove your content, or restrict your access to the Hub if:
+- You violate these Terms or the Code of Conduct.
+- Your residency claim appears to be false.
+- You create more than one account.
+- Required by law or a lawful order.
+- The Hub itself is shutting down (we'll give at least 30 days notice).
+
+## Changes to these Terms
+
+We may update these Terms as the Hub evolves. When we change these Terms or the Privacy Policy, you will see a notice the next time you visit the Hub, and you will be asked to accept the new version before you go on. If you don't accept them, close your account.
+
+## Governing law
+
+{{#place}}These Terms are governed by the laws of {STATE}, without regard to conflict-of-laws principles. Any legal action arising from these Terms or your use of the Hub must be brought in the state or federal courts serving {JURISDICTION}.{{/place}}{{^place}}These Terms are governed by the laws of {GOVERNING_STATE}, without regard to conflict-of-laws principles. Any legal action arising from these Terms or your use of the Hub must be brought in the state or federal courts located in {GOVERNING_STATE}.{{/place}}
+
+## Contact
+
+For questions about these Terms or to report a concern:
+
+{OPERATOR_LINE}{CONTACT_EMAIL}
+
+---
+
+*These Terms apply to {THE_HUB_NAME} at {HOSTNAME}. {{#place}}They do not apply to the {PLACE} government website or any other site we link to.{{/place}}{{^place}}They do not apply to any other site we link to.{{/place}}*
